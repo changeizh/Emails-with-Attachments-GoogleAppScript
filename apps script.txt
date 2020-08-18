@@ -1,0 +1,139 @@
+function myFunction(){
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  
+ 
+  cnt  =2;
+  while(true){
+  
+  data = sheet.getRange(cnt,1).isBlank();
+    
+    flag = sheet.getRange(cnt, 5).getValue();
+    
+    if(data == false){
+      
+      if(flag != 'EMAIL_SENT'){
+      
+        var reci = sheet.getRange(cnt, 3).getValue();
+        
+        var sub =  sheet.getRange(cnt, 1).getValue();
+        
+        var file_id = getFileID(sub, cnt);
+        
+        //      var blob =  Utilities.newBlob(data)
+        
+        try{
+          
+          var attach =  DriveApp.getFileById(file_id);
+          
+          var my_email = GmailApp.getAliases();
+          
+          GmailApp.sendEmail(reci, sub, 'This is email is sent from an API', { from : my_email[0], name :"Seair Auto Dispatch", attachments :[attach.getAs(MimeType.MICROSOFT_EXCEL)] });
+          
+          sheet.getRange(cnt, 5).setBackground('green');
+          
+          sheet.getRange(cnt, 5).setValue('EMAIL_SENT');
+        }
+        
+        catch (e){
+          
+          console.log()
+          
+          console.error('API got an error '+ e)
+          
+          var sheet1 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+          
+          sheet1.getRange(cnt, 5).setValue('API got an error.' +e);
+          
+          sheet1.getRange(cnt, 5).setBackground('pink');
+          
+        }
+        
+      }
+      
+      else{
+        
+        cnt++;
+        continue;
+        
+      }
+     
+       
+    }
+    else{
+      break;
+    }
+   cnt++; 
+  }
+};
+
+
+
+
+
+
+function getFileID(filename, num){
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  
+  var files = DriveApp.getFiles();
+  
+  while (files.hasNext()) {
+      
+    var file = files.next();
+    
+       if(filename == file.getName()){
+        
+           sheet.getRange(num, 4).check();
+         
+           return file.getId();
+         
+           break;
+       }
+    
+      else{
+      
+         continue;
+    
+        }
+  }
+  
+};
+
+
+
+function listFilesInFolder() {
+
+  var contents = DriveApp.getFilesByType("EXCEL");
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Files');
+  sheet.clear();
+
+  sheet.appendRow(["Name", "Date", "Size", "URL", "Download", "Description"]);
+
+  while (contents.hasNext()) {
+      
+    var file = contents.next();
+   
+    var data = [
+      file.getName(),
+      file.getDateCreated(),
+      file.getSize(),
+      file.getUrl(),
+      "https://docs.google.com/uc?export=download&id=" + file.getId(),
+      file.getDescription(),
+//      file.getFileType().toString()
+    ];
+
+    sheet.appendRow(data);
+         
+       
+  }
+  
+ 
+
+};
+
+
+
+
