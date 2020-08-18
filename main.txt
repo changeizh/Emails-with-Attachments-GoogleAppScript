@@ -1,0 +1,182 @@
+function myFunction(){
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  
+ 
+  cnt  =2;
+  while(true){
+  
+  data = sheet.getRange(cnt,1).isBlank();
+    
+    flag = sheet.getRange(cnt, 5).getValue();
+    
+    if(data == false){
+      
+      var sub =  sheet.getRange(cnt, 1).getValue();
+      
+      var cmp = sheet.getRange(cnt, 2).getValue();
+      
+      var file_id = getFileID(sub+'.xlsx', cnt);
+      
+      if(flag != 'EMAIL_SENT'){
+      
+        var reci = sheet.getRange(cnt, 3).getValue();
+        
+        var subj = sub+" - "+cmp;
+        
+        try{
+          
+          var attach =  DriveApp.getFileById(file_id);
+           
+          var sig = HtmlService.createHtmlOutputFromFile('signature').getContent();
+         
+          GmailApp.sendEmail(reci, subj,sig, {htmlBody : sig,name :"Seair Auto Dispatch", attachments :[attach.getAs(MimeType.MICROSOFT_EXCEL)] });
+          
+          sheet.getRange(cnt, 5).setBackground('green');
+          
+          sheet.getRange(cnt, 5).setValue('EMAIL_SENT');
+        }
+        
+        catch (e){
+          
+          console.log()
+          
+          console.error('API got an error: '+ e)
+          
+          var sheet1 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+          
+          if(e == 'Exception: Invalid argument: id'){
+            
+            sheet1.getRange(cnt, 4).uncheck();
+            
+            sheet1.getRange(cnt, 5).setValue('File does not Exist?: ' +e);
+          
+            sheet1.getRange(cnt, 5).setBackground('pink');
+          }
+          
+          else{
+            
+            sheet1.getRange(cnt, 4).uncheck();
+            
+            sheet1.getRange(cnt, 5).setValue('API got an error: ' +e);
+          
+            sheet1.getRange(cnt, 5).setBackground('pink');
+          
+          }
+          
+          
+        }
+        
+      }
+      
+      else{
+        
+        cnt++;
+        continue;
+        
+      }
+     
+       
+    }
+    else{
+      break;
+    }
+   cnt++; 
+  }
+};
+
+
+
+
+
+
+function getFileID(filename, num){
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  
+  var files = DriveApp.getFiles();
+  
+  while (files.hasNext()) {
+      
+    var file = files.next();
+    
+    try{
+      
+          if(filename == file.getName()){
+        
+           sheet.getRange(num, 4).check();
+         
+           return file.getId();
+         
+           break;
+    
+           }
+      
+          else{
+      
+              continue;
+    
+             }
+          
+       }
+    
+    catch (err){
+      
+      console.log()
+          
+      console.error('API got an error: '+ err)
+      
+      var sheet2 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+      
+      sheet2.getRange(num, 4).uncheck();
+      
+      sheet2.getRange(cnt, 5).setValue('File does not Exist?: ' +err);
+      
+    
+    
+    }
+    
+      
+  }
+  
+};
+
+
+function listFilesInFolder() {
+
+  var contents = DriveApp.getFilesByType(MimeType.MICROSOFT_EXCEL);
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Files');
+  sheet.clear();
+
+  
+  sheet.appendRow(["Name", "Date", "Size", "URL", "Download", "Description"]);
+
+  while (contents.hasNext()) {
+      
+    var file = contents.next();
+    
+    var data = [
+      file.getName(),
+      file.getDateCreated(),
+      file.getSize(),
+      file.getUrl(),
+      "https://docs.google.com/uc?export=download&id=" + file.getId(),
+      file.getDescription(),
+      file.getDescription()
+    ];
+
+    sheet.appendRow(data);
+         
+       
+  }
+  
+ 
+
+};
+
+
+
+
+
+
