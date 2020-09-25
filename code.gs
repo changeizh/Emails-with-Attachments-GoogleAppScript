@@ -1,5 +1,13 @@
-function myFunction(){
+function emailer(){
+   
+  var ui = SpreadsheetApp.getUi();
   
+  var response = ui.prompt('Start emailing?', ui.ButtonSet.YES_NO);
+  
+  
+  if(response.getSelectedButton()== ui.Button.YES){
+    
+    
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
   
  
@@ -12,11 +20,13 @@ function myFunction(){
     
     if(data == false){
       
+      sheet.getRange(cnt, 4).insertCheckboxes()
+      
       var sub =  sheet.getRange(cnt, 1).getValue();
       
       var cmp = sheet.getRange(cnt, 2).getValue();
       
-      var file_id = getFileID(sub+'.xlsx', cnt);
+      var file_id = getFileID(sub, cnt);
       
       if(flag != 'EMAIL_SENT'){
       
@@ -30,11 +40,14 @@ function myFunction(){
            
           var sig = HtmlService.createHtmlOutputFromFile('signature').getContent();
          
-          GmailApp.sendEmail(reci, subj,sig, {htmlBody : sig,name :"Seair Auto Dispatch", attachments :[attach.getAs(MimeType.MICROSOFT_EXCEL)] });
+          GmailApp.sendEmail(reci, subj,sig, {htmlBody : sig,name :"Seair Exim Data Dispatch", attachments :[attach.getAs(MimeType.MICROSOFT_EXCEL)] });
           
           sheet.getRange(cnt, 5).setBackground('green');
           
           sheet.getRange(cnt, 5).setValue('EMAIL_SENT');
+          
+          sheet.getRange(cnt, 4).check();
+          
         }
         
         catch (e){
@@ -52,6 +65,7 @@ function myFunction(){
             sheet1.getRange(cnt, 5).setValue('File does not Exist?: ' +e);
           
             sheet1.getRange(cnt, 5).setBackground('pink');
+       
           }
           
           else{
@@ -70,7 +84,7 @@ function myFunction(){
       }
       
       else{
-        
+        sheet.getRange(cnt, 4).check();
         cnt++;
         continue;
         
@@ -83,11 +97,12 @@ function myFunction(){
     }
    cnt++; 
   }
+}
 };
 
 
 
-
+//------------------------------------------------------------------------------------------
 
 
 function getFileID(filename, num){
@@ -142,11 +157,52 @@ function getFileID(filename, num){
 };
 
 
-function listFilesInFolder() {
 
+
+//------------------------------------------------------------------------------------------------------
+
+
+
+
+function listFilesInFolder() {
+  
+
+  
+    //if Emailer Sheet doesn;t exist, create Sheet and append 
+  var em = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  
+  if (!em) {
+
+  var mod = SpreadsheetApp.getActiveSpreadsheet().insertSheet('Emails');
+   
+  mod.appendRow(["File_Name", "Company Name", "Email", "Files Exist?", "Email Status"]);
+  mod.getRange(1 ,1, 1, 5).setBackground('#87CEEB');
+  mod.setFrozenRows(1);
+   
+ }
+  
+  var Gdrive = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('List of Files in GDrive');
+  
+//if GDrive Sheet doesn;t exist, create Sheet and append 
+ if (!Gdrive) {
+
+   var Gdrive = SpreadsheetApp.getActiveSpreadsheet().insertSheet('List of Files in GDrive');
+   
+   Gdrive.appendRow(["Name", "Date", "Size", "URL", "Download", "Description"]);
+   Gdrive.getRange(1 ,1, 1, 6).setBackground('orange');
+   Gdrive.setFrozenRows(1);
+   
+}
+   
+
+  
+  //--------------------------------
+  
+ 
+  
   var contents = DriveApp.getFilesByType(MimeType.MICROSOFT_EXCEL);
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Files');
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('List of Files in GDrive');
   sheet.clear();
 
   
@@ -159,7 +215,8 @@ function listFilesInFolder() {
     var data = [
       file.getName(),
       file.getDateCreated(),
-      file.getSize(),
+      (file.getSize()/1024/1024).toFixed(2) + " MB",
+   
       file.getUrl(),
       "https://docs.google.com/uc?export=download&id=" + file.getId(),
       file.getDescription(),
@@ -171,10 +228,64 @@ function listFilesInFolder() {
        
   }
   
- 
+ setValidation();
 
+  
 };
 
+
+
+
+
+//----------------------------------------------------------------------------------------------------------------------------
+
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+
+  ui.createMenu('Emailer')
+      .addItem('Refresh Files', 'user_interface')
+      .addItem('Start Emailer', 'emailer')
+      .addToUi();
+}
+
+
+
+
+//---------------------------------------------------------------------------------------------------
+
+function setValidation() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Emails');
+  var Gdrive = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('List of Files in GDrive');
+  var cells = sheet.getRange("A2:A" + sheet.getLastRow()+100);
+  var rules = Gdrive.getRange("A2:A" + Gdrive.getLastRow());
+  var validation = SpreadsheetApp.newDataValidation().requireValueInRange(rules).build();
+  cells.setDataValidation(validation);
+  sheet.autoResizeColumns(1, 5);
+  Gdrive.autoResizeColumns(1, 3);
+}
+
+
+
+//-------------------------------
+
+// user interface desing
+
+function user_interface(){
+  var ui = SpreadsheetApp.getUi();
+  
+//  ui.alert('Refreshing Google Drive Items in Files Sheets');
+  
+  var response = ui.prompt('Refresh Google Drive Files', ui.ButtonSet.YES_NO);
+  
+  
+  if(response.getSelectedButton()== ui.Button.YES){
+    
+   listFilesInFolder();
+    
+  }
+
+}
 
 
 
