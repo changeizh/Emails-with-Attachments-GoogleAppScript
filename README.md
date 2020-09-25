@@ -1,9 +1,10 @@
 # Emails-with-Attachments-GoogleAppScript
-Send multiple emails with different attachment to different recipent directly through a  Google Spreadsheets. 
-Your attachements should be in your Google Drive
-Manage your emails details like:
-  1. Recipent emails
-  2. Attachments
-  3. Subject
-  4. Company Name
-  in a Google Spreadsheet.
+  1. Send multiple emails with different attachment to different recipent directly through a  Google Spreadsheets. 
+  2. Your attachements should be in your Google Drive
+  3. Look for Email Data Format to see what columns needs to add.
+  4. Manage your emails details like:
+    a. Recipent emails
+    b. Attachments
+    c. Subject
+    d. Company Name
+    in a Google Spreadsheet.
